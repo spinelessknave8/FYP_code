@@ -1,0 +1,49 @@
+seed: 42
+
+device: "cpu"  # auto-select in code; cpu is default
+
+image_size: 224
+batch_size: 32
+num_workers: 2
+output_dir: "outputs"
+
+neu:
+  data_root: "data/neu"
+  images_dir: "images"
+  splits: ["train", "validation"]
+  class_mapping:
+    Crazing: "crazing"
+    Inclusion: "inclusion"
+    Patches: "patches"
+    Pitted_Surface: "pitted_surface"
+    Rolled-in_Scale: "rolled-in_scale"
+    Scratches: "scratches"
+
+mvtec:
+  data_root: "data/mvtec"
+
+resnet:
+  epochs: 15
+  lr: 0.001
+  weight_decay: 0.0001
+  pretrained: true
+
+embedding:
+  layer: "avgpool"  # penultimate features
+
+osr:
+  distance: "mahalanobis"
+  cov_reg_lambda: 1e-3
+  accept_rate: 0.95
+  use_confidence_gate: true
+  confidence_accept_rate: 0.95
+
+patchcore:
+  backbone: "resnet18"
+  num_patches_per_sample: 128
+  coreset_sampling_ratio: 0.1
+  accept_rate: 0.95
+
+runtime:
+  num_warmup: 5
+  num_runs: 30

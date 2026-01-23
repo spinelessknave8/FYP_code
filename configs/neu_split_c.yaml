@@ -1,0 +1,5 @@
+# Split C: mixed set, 4 known / 2 unknown
+known_classes: ["Crazing", "Patches", "Pitted_Surface", "Scratches"]
+unknown_classes: ["Inclusion", "Rolled-in_Scale"]
+
+# This split mixes texture-like and structural defects.

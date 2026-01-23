@@ -1,0 +1,3 @@
+# Split B: different known set
+known_classes: ["Pitted_Surface", "Rolled-in_Scale", "Scratches"]
+unknown_classes: ["Crazing", "Inclusion", "Patches"]

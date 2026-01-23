@@ -1,0 +1,6 @@
+# Split A: 3 known, 3 unknown
+known_classes: ["Crazing", "Inclusion", "Patches"]
+unknown_classes: ["Pitted_Surface", "Rolled-in_Scale", "Scratches"]
+
+# Override defaults if needed
+# e.g., resnet.epochs: 20
