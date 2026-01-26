@@ -33,7 +33,7 @@ embedding:
 
 osr:
   distance: "mahalanobis"
-  cov_reg_lambda: 1e-3
+  cov_reg_lambda: 0.001
   accept_rate: 0.95
   use_confidence_gate: true
   confidence_accept_rate: 0.95
