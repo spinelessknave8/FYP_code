@@ -7,3 +7,16 @@ outputs/
 *.pt
 *.pth
 *.npy
+
+# Notebooks / checkpoints
+.ipynb_checkpoints/
+
+# Local datasets (keep structure docs only)
+data/severstal/
+data/neu/
+data/mvtec/
+
+# Build / packaging artifacts
+build/
+dist/
+*.egg-info/

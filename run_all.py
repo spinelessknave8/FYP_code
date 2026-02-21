@@ -2,12 +2,12 @@ import os
 import argparse
 import csv
 
-from src.pipelines.train_patchcore import main as train_patchcore
-from src.pipelines.train_classifier import main as train_classifier
-from src.pipelines.extract_embeddings import main as extract_embeddings
-from src.pipelines.run_osr import main as run_osr
-from src.pipelines.run_cascade import main as run_cascade
-from src.pipelines.benchmark_runtime import main as run_benchmark
+from src.pipelines.one_stage.train_classifier import main as train_classifier
+from src.pipelines.one_stage.extract_embeddings import main as extract_embeddings
+from src.pipelines.one_stage.run_osr import main as run_osr
+from src.pipelines.two_stage.train_patchcore import main as train_patchcore
+from src.pipelines.two_stage.run_cascade import main as run_cascade
+from src.pipelines.two_stage.benchmark_runtime import main as run_benchmark
 from src.utils.io import load_yaml, deep_update
 
 

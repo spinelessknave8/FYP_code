@@ -28,13 +28,17 @@ If your dataset uses different folder names, update:
 - `configs/default.yaml` under `neu.class_mapping`
 - `src/datasets/neu.py` if needed
 
-## MVTec AD (PatchCore)
+## Severstal Steel Defect Detection (PatchCore Stage 1)
 
 Expected layout:
 
 ```
-data/mvtec/
-  <category>/{train,test}/...
+data/severstal/
+  train.csv
+  train_images/
+    *.jpg
 ```
 
-PatchCore uses **train/good** images only. A small validation split (e.g. 10%) is created from train/good for threshold calibration.
+Stage-1 training filters `train.csv` to keep only **normal/no-defect** images
+(`EncodedPixels` empty), then extracts non-overlapping `224x224` patches.
+A validation split (default 10%) is held out for threshold calibration.

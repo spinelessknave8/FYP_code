@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchvision.models import resnet18, ResNet18_Weights
+from tqdm import tqdm
 
 
 class PatchCoreBackbone(nn.Module):
@@ -38,7 +39,7 @@ def build_memory_bank(dataloader, device, backbone, num_patches_per_sample: int)
     backbone.eval()
     memory = []
     with torch.no_grad():
-        for x in dataloader:
+        for x in tqdm(dataloader, desc="patchcore: build memory", leave=False):
             x = x.to(device)
             feat = backbone(x)
             patches = extract_patches(feat)
@@ -76,7 +77,7 @@ def infer_anomaly_scores(dataloader, device, backbone, memory):
     backbone.eval()
     scores = []
     with torch.no_grad():
-        for x in dataloader:
+        for x in tqdm(dataloader, desc="patchcore: score val", leave=False):
             x = x.to(device)
             feat = backbone(x)
             b = feat.shape[0]

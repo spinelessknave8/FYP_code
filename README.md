@@ -6,7 +6,7 @@ This repository provides a **minimal, reproducible** PyTorch codebase to compare
   - ResNet50 classifier trained on **known defect classes**
   - Open-set detection by **Mahalanobis distance** on penultimate-layer embeddings
 - **Approach 2: Cascaded Anomaly–Classification (Two-Stage)**
-  - Stage 1: PatchCore anomaly detection trained on **MVTec AD good images** only
+  - Stage 1: PatchCore anomaly detection trained on **Severstal normal (no-defect) images**
   - Stage 2: ResNet50 classifier on known defect classes
 
 **What this project is NOT:**
@@ -29,6 +29,7 @@ pip install opencv-python
 ## Data Placement
 
 See `data/README_DATA.md` for dataset layout and mapping.
+By default, Stage-1 reads Severstal from `data/severstal` (`severstal.data_root` in config).
 
 ## Configs and Splits
 
@@ -37,11 +38,23 @@ See `data/README_DATA.md` for dataset layout and mapping.
 
 Each split has **known classes** (train/val/test) and **unknown classes** (test-only).
 
+## Pipeline Layout
+
+- `src/pipelines/one_stage/` contains one-stage OSR pipeline:
+  - `train_classifier.py`
+  - `extract_embeddings.py`
+  - `run_osr.py`
+- `src/pipelines/two_stage/` contains two-stage cascade pipeline:
+  - `train_patchcore.py`
+  - `run_cascade.py`
+  - `benchmark_runtime.py`
+- `src/pipelines/*.py` top-level files are compatibility wrappers.
+
 ## How Thresholds are Calibrated
 
 - **OSR distance threshold (tau)**: set on **known validation** embeddings so **95% are accepted**.
 - **Classifier confidence threshold (kappa)**: optional; set on **known validation** logits so **95% are accepted**.
-- **PatchCore anomaly threshold**: set on **MVTec good validation** so **95% are accepted**.
+- **PatchCore anomaly threshold**: set on **held-out Severstal normal patches** so **95% are accepted**.
 
 No test data is used for threshold calibration.
 
@@ -52,7 +65,7 @@ python run_all.py --config configs/default.yaml
 ```
 
 This will:
-- Train PatchCore once on MVTec good images (cached)
+- Train PatchCore once on Severstal normal patches (cached)
 - For each NEU split (A/B/C):
   - Train ResNet50
   - Run OSR pipeline
@@ -63,13 +76,21 @@ This will:
 ## Running Individual Steps
 
 ```bash
-python -m src.pipelines.train_classifier --config configs/neu_split_a.yaml
-python -m src.pipelines.extract_embeddings --config configs/neu_split_a.yaml
-python -m src.pipelines.run_osr --config configs/neu_split_a.yaml
-python -m src.pipelines.train_patchcore --config configs/default.yaml
-python -m src.pipelines.run_cascade --config configs/neu_split_a.yaml
-python -m src.pipelines.benchmark_runtime --config configs/neu_split_a.yaml
+python -m src.pipelines.one_stage.train_classifier --config configs/neu_split_a.yaml
+python -m src.pipelines.one_stage.extract_embeddings --config configs/neu_split_a.yaml
+python -m src.pipelines.one_stage.run_osr --config configs/neu_split_a.yaml
+python -m src.pipelines.two_stage.train_patchcore --config configs/default.yaml
+python -m src.pipelines.two_stage.run_cascade --config configs/neu_split_a.yaml
+python -m src.pipelines.two_stage.benchmark_runtime --config configs/neu_split_a.yaml
 ```
+
+## Running in Colab
+
+- Notebook template: `notebooks/colab_two_stage_runner.ipynb`
+- Notebook entrypoint helpers: `src/pipelines/notebook_entrypoints.py`
+- The notebook calls existing pipeline functions directly:
+  - `run_two_stage_stage1(...)`
+  - `run_split_pipeline(...)`
 
 ## Outputs
 
@@ -91,7 +112,7 @@ outputs/
 
 ## Known Limitations
 
-- PatchCore is trained on **MVTec AD** and evaluated on **NEU** defects. This is a cross-domain anomaly detector by design.
+- Two-stage Stage-1 uses Severstal normal-only filtering from `train.csv`; defective Severstal samples are excluded.
 - NEU contains only defective images; there are **no normal/no-defect images**. Cascade evaluation reports a mode that **ignores the `no_defect` outcome**.
 
 ## Notes on Reproducibility
