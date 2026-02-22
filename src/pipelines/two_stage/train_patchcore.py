@@ -3,6 +3,7 @@ import argparse
 import json
 import numpy as np
 import time
+import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
@@ -15,7 +16,13 @@ from ...datasets.severstal import (
     SeverstalPatchDataset,
     train_val_split,
 )
-from ...patchcore.patchcore_simple import PatchCoreBackbone, build_memory_bank, coreset_subsample, infer_anomaly_scores
+from ...patchcore.patchcore_simple import (
+    PatchCoreBackbone,
+    build_memory_bank,
+    coreset_subsample,
+    extract_patches,
+    anomaly_score,
+)
 from ...patchcore.calibrate import calibrate_anomaly_threshold
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
@@ -30,6 +37,47 @@ def load_config(config_path: str) -> dict:
     return cfg
 
 
+def infer_anomaly_scores_resumable(
+    dataloader,
+    device,
+    backbone,
+    memory,
+    progress_path: str,
+    save_every_batches: int = 5,
+):
+    backbone.eval()
+    if os.path.exists(progress_path):
+        scores = np.load(progress_path).tolist()
+    else:
+        scores = []
+
+    done_batches = len(scores)
+    total_batches = len(dataloader)
+    if done_batches > 0:
+        print(f"[two-stage] Resuming val scoring from batch {done_batches+1}/{total_batches}")
+
+    with torch.no_grad():
+        for bidx, x in enumerate(dataloader):
+            if bidx < done_batches:
+                continue
+            x = x.to(device)
+            feat = backbone(x)
+            # val loader is batch_size=cfg["batch_size"] and shuffle=False.
+            # Score each sample and aggregate in loader order.
+            for i in range(feat.shape[0]):
+                patches = extract_patches(feat[i : i + 1]).cpu().numpy()
+                score = anomaly_score(patches, memory)
+                scores.append(float(score))
+
+            if ((bidx + 1) % save_every_batches == 0) or ((bidx + 1) == total_batches):
+                np.save(progress_path, np.array(scores, dtype=np.float32))
+                print(f"[two-stage] Saved val-score checkpoint at batch {bidx+1}/{total_batches}")
+
+    arr = np.array(scores, dtype=np.float32)
+    np.save(progress_path, arr)
+    return arr
+
+
 def main(config_path: str):
     t_start = time.time()
     cfg = load_config(config_path)
@@ -41,6 +89,7 @@ def main(config_path: str):
     memory_pre_path = os.path.join(out_dir, "memory_precoreset.npy")
     memory_path = os.path.join(out_dir, "memory.npy")
     val_scores_path = os.path.join(out_dir, "val_scores.npy")
+    val_scores_progress_path = os.path.join(out_dir, "val_scores.progress.npy")
     threshold_path = os.path.join(out_dir, "threshold.json")
 
     sev_cfg = cfg["severstal"]
@@ -119,7 +168,14 @@ def main(config_path: str):
         else:
             t_val = time.time()
             print("[two-stage] Scoring validation patches for threshold calibration...")
-            val_scores = infer_anomaly_scores(val_loader, device, backbone, memory)
+            val_scores = infer_anomaly_scores_resumable(
+                val_loader,
+                device,
+                backbone,
+                memory,
+                progress_path=val_scores_progress_path,
+                save_every_batches=5,
+            )
             np.save(val_scores_path, val_scores)
             print(f"[two-stage] Validation scoring done in {time.time() - t_val:.1f}s")
             print(f"[two-stage] Saved validation scores: {val_scores_path}")
