@@ -1,5 +1,6 @@
 import os
 import argparse
+import json
 import numpy as np
 import time
 from torch.utils.data import DataLoader
@@ -37,6 +38,10 @@ def main(config_path: str):
     device = get_device(cfg["device"])
     out_dir = os.path.join(cfg["output_dir"], "patchcore")
     os.makedirs(out_dir, exist_ok=True)
+    memory_pre_path = os.path.join(out_dir, "memory_precoreset.npy")
+    memory_path = os.path.join(out_dir, "memory.npy")
+    val_scores_path = os.path.join(out_dir, "val_scores.npy")
+    threshold_path = os.path.join(out_dir, "threshold.json")
 
     sev_cfg = cfg["severstal"]
     sev_root = sev_cfg["data_root"]
@@ -81,25 +86,47 @@ def main(config_path: str):
 
     backbone = PatchCoreBackbone(cfg["patchcore"]["backbone"]).to(device)
 
-    t_memory = time.time()
-    print("[two-stage] Building memory bank...")
-    memory = build_memory_bank(train_loader, device, backbone, cfg["patchcore"]["num_patches_per_sample"])
-    print(f"[two-stage] Memory bank built: {len(memory)} vectors in {time.time() - t_memory:.1f}s")
+    if os.path.exists(memory_path):
+        print("[two-stage] Found existing coreset memory.npy, loading...")
+        memory = np.load(memory_path)
+    else:
+        if os.path.exists(memory_pre_path):
+            print("[two-stage] Found existing memory_precoreset.npy, loading...")
+            memory_pre = np.load(memory_pre_path)
+        else:
+            t_memory = time.time()
+            print("[two-stage] Building memory bank...")
+            memory_pre = build_memory_bank(train_loader, device, backbone, cfg["patchcore"]["num_patches_per_sample"])
+            np.save(memory_pre_path, memory_pre)
+            print(f"[two-stage] Memory bank built: {len(memory_pre)} vectors in {time.time() - t_memory:.1f}s")
+            print(f"[two-stage] Saved pre-coreset memory: {memory_pre_path}")
 
-    t_coreset = time.time()
-    print("[two-stage] Applying coreset subsampling...")
-    memory = coreset_subsample(memory, cfg["patchcore"]["coreset_sampling_ratio"], seed=cfg["seed"])
-    print(f"[two-stage] Coreset done: {len(memory)} vectors in {time.time() - t_coreset:.1f}s")
+        t_coreset = time.time()
+        print("[two-stage] Applying coreset subsampling...")
+        memory = coreset_subsample(memory_pre, cfg["patchcore"]["coreset_sampling_ratio"], seed=cfg["seed"])
+        np.save(memory_path, memory)
+        print(f"[two-stage] Coreset done: {len(memory)} vectors in {time.time() - t_coreset:.1f}s")
+        print(f"[two-stage] Saved coreset memory: {memory_path}")
 
-    t_val = time.time()
-    print("[two-stage] Scoring validation patches for threshold calibration...")
-    val_scores = infer_anomaly_scores(val_loader, device, backbone, memory)
-    threshold = calibrate_anomaly_threshold(val_scores, cfg["patchcore"]["accept_rate"])
-    print(f"[two-stage] Validation scoring + calibration done in {time.time() - t_val:.1f}s")
-    print(f"[two-stage] Calibrated threshold (tau): {float(threshold):.6f}")
+    if os.path.exists(threshold_path):
+        with open(threshold_path, "r") as f:
+            threshold = float(json.load(f)["threshold"])
+        print(f"[two-stage] Found existing threshold.json, skipping calibration (tau={threshold:.6f})")
+    else:
+        if os.path.exists(val_scores_path):
+            print("[two-stage] Found existing val_scores.npy, loading...")
+            val_scores = np.load(val_scores_path)
+        else:
+            t_val = time.time()
+            print("[two-stage] Scoring validation patches for threshold calibration...")
+            val_scores = infer_anomaly_scores(val_loader, device, backbone, memory)
+            np.save(val_scores_path, val_scores)
+            print(f"[two-stage] Validation scoring done in {time.time() - t_val:.1f}s")
+            print(f"[two-stage] Saved validation scores: {val_scores_path}")
 
-    np.save(os.path.join(out_dir, "memory.npy"), memory)
-    save_json(os.path.join(out_dir, "threshold.json"), {"threshold": float(threshold)})
+        threshold = calibrate_anomaly_threshold(val_scores, cfg["patchcore"]["accept_rate"])
+        save_json(threshold_path, {"threshold": float(threshold)})
+        print(f"[two-stage] Calibrated threshold (tau): {float(threshold):.6f}")
     save_json(os.path.join(out_dir, "meta.json"), {
         "source": "severstal",
         "severstal_root": sev_root,

@@ -128,8 +128,23 @@ def main(config_path: str):
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     best_val = -1.0
     best_state = None
+    start_epoch = 0
+    checkpoint_last_path = os.path.join(clf_dir, "checkpoint_last.pt")
 
-    for epoch in range(cfg["resnet"]["epochs"]):
+    if os.path.exists(checkpoint_last_path):
+        ckpt = torch.load(checkpoint_last_path, map_location="cpu")
+        model.load_state_dict(ckpt["model_state"])
+        optimizer.load_state_dict(ckpt["optimizer_state"])
+        train_losses = ckpt.get("train_losses", [])
+        val_losses = ckpt.get("val_losses", [])
+        train_accs = ckpt.get("train_accs", [])
+        val_accs = ckpt.get("val_accs", [])
+        best_val = float(ckpt.get("best_val", -1.0))
+        best_state = ckpt.get("best_state")
+        start_epoch = int(ckpt.get("epoch", 0))
+        print(f"[classifier:{split_name}] Resuming from epoch {start_epoch+1}/{cfg['resnet']['epochs']}")
+
+    for epoch in range(start_epoch, cfg["resnet"]["epochs"]):
         print(f"epoch {epoch+1}/{cfg['resnet']['epochs']} - start")
         tl, ta = train_one_epoch(model, train_loader, device, optimizer, criterion)
         vl, va = eval_one_epoch(model, val_loader, device, criterion)
@@ -141,6 +156,20 @@ def main(config_path: str):
             best_val = va
             best_state = {"model_state": model.state_dict(), "class_to_idx": class_to_idx}
         print(f"epoch {epoch+1}/{cfg['resnet']['epochs']} - train_acc {ta:.3f} val_acc {va:.3f}")
+        torch.save(
+            {
+                "epoch": epoch + 1,
+                "model_state": model.state_dict(),
+                "optimizer_state": optimizer.state_dict(),
+                "best_val": best_val,
+                "best_state": best_state,
+                "train_losses": train_losses,
+                "val_losses": val_losses,
+                "train_accs": train_accs,
+                "val_accs": val_accs,
+            },
+            checkpoint_last_path,
+        )
 
     if best_state is None:
         best_state = {"model_state": model.state_dict(), "class_to_idx": class_to_idx}
