@@ -122,7 +122,10 @@ def main(config_path: str):
     test_loader = DataLoader(test_ds, batch_size=cfg["batch_size"], shuffle=False, num_workers=cfg["num_workers"])
 
     model = build_resnet50(num_classes=len(known_classes), pretrained=cfg["resnet"]["pretrained"]).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=cfg["resnet"]["lr"], weight_decay=cfg["resnet"]["weight_decay"])
+    lr = float(cfg["resnet"]["lr"])
+    weight_decay = float(cfg["resnet"]["weight_decay"])
+    epochs = int(cfg["resnet"]["epochs"])
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     criterion = nn.CrossEntropyLoss()
 
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
@@ -142,10 +145,10 @@ def main(config_path: str):
         best_val = float(ckpt.get("best_val", -1.0))
         best_state = ckpt.get("best_state")
         start_epoch = int(ckpt.get("epoch", 0))
-        print(f"[classifier:{split_name}] Resuming from epoch {start_epoch+1}/{cfg['resnet']['epochs']}")
+        print(f"[classifier:{split_name}] Resuming from epoch {start_epoch+1}/{epochs}")
 
-    for epoch in range(start_epoch, cfg["resnet"]["epochs"]):
-        print(f"epoch {epoch+1}/{cfg['resnet']['epochs']} - start")
+    for epoch in range(start_epoch, epochs):
+        print(f"epoch {epoch+1}/{epochs} - start")
         tl, ta = train_one_epoch(model, train_loader, device, optimizer, criterion)
         vl, va = eval_one_epoch(model, val_loader, device, criterion)
         train_losses.append(tl)
@@ -155,7 +158,7 @@ def main(config_path: str):
         if va > best_val:
             best_val = va
             best_state = {"model_state": model.state_dict(), "class_to_idx": class_to_idx}
-        print(f"epoch {epoch+1}/{cfg['resnet']['epochs']} - train_acc {ta:.3f} val_acc {va:.3f}")
+        print(f"epoch {epoch+1}/{epochs} - train_acc {ta:.3f} val_acc {va:.3f}")
         torch.save(
             {
                 "epoch": epoch + 1,
