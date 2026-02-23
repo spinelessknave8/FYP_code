@@ -77,7 +77,9 @@ def infer_anomaly_scores(dataloader, device, backbone, memory):
     backbone.eval()
     scores = []
     with torch.no_grad():
-        for x in tqdm(dataloader, desc="patchcore: score val", leave=False):
+        for batch in tqdm(dataloader, desc="patchcore: score val", leave=False):
+            # Support both image-only loaders and (image, label) loaders.
+            x = batch[0] if isinstance(batch, (tuple, list)) else batch
             x = x.to(device)
             feat = backbone(x)
             b = feat.shape[0]
