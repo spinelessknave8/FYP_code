@@ -78,8 +78,19 @@ def infer_anomaly_scores(dataloader, device, backbone, memory):
     scores = []
     with torch.no_grad():
         for batch in tqdm(dataloader, desc="patchcore: score val", leave=False):
-            # Support both image-only loaders and (image, label) loaders.
-            x = batch[0] if isinstance(batch, (tuple, list)) else batch
+            # Support image-only tensors, (image, label) batches, and list[tensor] batches.
+            x = batch
+            if isinstance(batch, (tuple, list)):
+                x = batch[0]
+            if isinstance(x, (tuple, list)):
+                if len(x) == 0:
+                    continue
+                if isinstance(x[0], torch.Tensor):
+                    x = torch.stack(list(x), dim=0)
+                else:
+                    raise TypeError(f"Unsupported batch image type: {type(x[0])}")
+            if not isinstance(x, torch.Tensor):
+                raise TypeError(f"Unsupported batch type for images: {type(x)}")
             x = x.to(device)
             feat = backbone(x)
             b = feat.shape[0]
