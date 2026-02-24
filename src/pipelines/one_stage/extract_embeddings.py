@@ -28,7 +28,9 @@ def load_config(config_path: str) -> dict:
 def split_name_from_config(config_path: str) -> str:
     name = os.path.splitext(os.path.basename(config_path))[0]
     if name.startswith("neu_"):
-        return name.replace("neu_", "")
+        name = name.replace("neu_", "")
+    if name.endswith(".colab"):
+        name = name[: -len(".colab")]
     return name
 
 
