@@ -138,17 +138,26 @@ def main(config_path: str):
     checkpoint_last_path = os.path.join(clf_dir, "checkpoint_last.pt")
 
     if os.path.exists(checkpoint_last_path):
-        ckpt = torch.load(checkpoint_last_path, map_location="cpu")
-        model.load_state_dict(ckpt["model_state"])
-        optimizer.load_state_dict(ckpt["optimizer_state"])
-        train_losses = ckpt.get("train_losses", [])
-        val_losses = ckpt.get("val_losses", [])
-        train_accs = ckpt.get("train_accs", [])
-        val_accs = ckpt.get("val_accs", [])
-        best_val = float(ckpt.get("best_val", -1.0))
-        best_state = ckpt.get("best_state")
-        start_epoch = int(ckpt.get("epoch", 0))
-        print(f"[classifier:{split_name}] Resuming from epoch {start_epoch+1}/{epochs}")
+        try:
+            ckpt = torch.load(checkpoint_last_path, map_location="cpu")
+            model.load_state_dict(ckpt["model_state"])
+            optimizer.load_state_dict(ckpt["optimizer_state"])
+            train_losses = ckpt.get("train_losses", [])
+            val_losses = ckpt.get("val_losses", [])
+            train_accs = ckpt.get("train_accs", [])
+            val_accs = ckpt.get("val_accs", [])
+            best_val = float(ckpt.get("best_val", -1.0))
+            best_state = ckpt.get("best_state")
+            start_epoch = int(ckpt.get("epoch", 0))
+            print(f"[classifier:{split_name}] Resuming from epoch {start_epoch+1}/{epochs}")
+        except Exception as exc:
+            bad_path = checkpoint_last_path + ".corrupt"
+            try:
+                os.replace(checkpoint_last_path, bad_path)
+            except OSError:
+                pass
+            print(f"[classifier:{split_name}] Failed to load checkpoint ({exc}). Starting fresh.")
+            print(f"[classifier:{split_name}] Corrupt checkpoint moved to: {bad_path}")
 
     for epoch in range(start_epoch, epochs):
         print(f"epoch {epoch+1}/{epochs} - start")
