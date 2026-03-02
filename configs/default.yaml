@@ -49,6 +49,12 @@ patchcore:
   coreset_sampling_ratio: 0.1
   accept_rate: 0.95
 
+two_stage:
+  # "target_known_val" calibrates tau per split on NEU known validation scores.
+  # "source_patchcore" reuses patchcore/threshold.json calibrated on Severstal normals.
+  tau_source: "target_known_val"
+  tau_accept_rate: 0.95
+
 runtime:
   num_warmup: 5
   num_runs: 30

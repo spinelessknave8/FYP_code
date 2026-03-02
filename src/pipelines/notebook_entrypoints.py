@@ -93,6 +93,13 @@ def run_all_split_pipelines(split_configs: Iterable[str] = DEFAULT_SPLITS, skip_
         run_split_pipeline(split_config, skip_if_complete=skip_if_complete)
 
 
+def run_split_cascade_only(split_config_path: str) -> None:
+    t0 = time.time()
+    print(f"[notebook] cascade-only start: {split_config_path}")
+    run_cascade(split_config_path)
+    print(f"[notebook] cascade-only done: {split_config_path} in {time.time() - t0:.1f}s")
+
+
 def load_cascade_metrics(split_name: str, output_dir: str = "outputs") -> Dict[str, Any]:
     metrics_path = os.path.join(output_dir, split_name, "cascade", "metrics.json")
     with open(metrics_path, "r") as f:

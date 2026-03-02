@@ -14,6 +14,7 @@ from ...utils.seed import set_seed
 from ...datasets.neu import NEUListDataset, stratified_split, collect_neu_samples
 from ...models.resnet50 import build_resnet50
 from ...patchcore.patchcore_simple import PatchCoreBackbone, infer_anomaly_scores
+from ...patchcore.calibrate import calibrate_anomaly_threshold
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
@@ -56,10 +57,10 @@ def main(config_path: str):
     if not known_classes:
         raise ValueError("known_classes not set in split config")
 
-    # Load patchcore
+    # Load patchcore memory and source-calibrated threshold
     patchcore_dir = os.path.join(cfg["output_dir"], "patchcore")
     memory = np.load(os.path.join(patchcore_dir, "memory.npy"))
-    threshold = json.load(open(os.path.join(patchcore_dir, "threshold.json"), "r"))["threshold"]
+    source_threshold = json.load(open(os.path.join(patchcore_dir, "threshold.json"), "r"))["threshold"]
     backbone = PatchCoreBackbone(cfg["patchcore"]["backbone"]).to(device)
 
     # Load classifier
@@ -88,8 +89,9 @@ def main(config_path: str):
     print(f"[cascade:{split_name}] loaded samples")
     print(f"  known_pool: {len(known_samples)} unknown_pool: {len(unknown_samples)}")
 
-    _, _, known_test = stratified_split(known_samples, train_ratio=0.7, val_ratio=0.15, seed=cfg["seed"])
+    _, known_val, known_test = stratified_split(known_samples, train_ratio=0.7, val_ratio=0.15, seed=cfg["seed"])
     print(f"  known_test after split: {len(known_test)}")
+    print(f"  known_val for tau calibration: {len(known_val)}")
 
     class_to_idx = {c: i for i, c in enumerate(known_classes)}
 
@@ -100,10 +102,44 @@ def main(config_path: str):
     ])
 
     known_ds = NEUListDataset(known_test, class_to_idx=class_to_idx, transform=tf)
+    known_val_ds = NEUListDataset(known_val, class_to_idx=class_to_idx, transform=tf)
     unk_ds = NEUListDataset(unknown_samples, class_to_idx=None, transform=tf)
 
     known_loader = DataLoader(known_ds, batch_size=cfg["batch_size"], shuffle=False, num_workers=cfg["num_workers"])
+    known_val_loader = DataLoader(known_val_ds, batch_size=cfg["batch_size"], shuffle=False, num_workers=cfg["num_workers"])
     unk_loader = DataLoader(unk_ds, batch_size=cfg["batch_size"], shuffle=False, num_workers=cfg["num_workers"])
+
+    # Tau selection strategy: either source (Severstal) threshold or per-split target-known validation.
+    two_stage_cfg = cfg.get("two_stage", {})
+    tau_source = two_stage_cfg.get("tau_source", "source_patchcore")
+    tau_accept_rate = float(two_stage_cfg.get("tau_accept_rate", cfg["patchcore"]["accept_rate"]))
+    threshold = float(source_threshold)
+    known_val_scores = None
+    if tau_source == "target_known_val":
+        known_val_scores_path = os.path.join(cascade_dir, "stage1_known_val_scores.npy")
+        tau_info_path = os.path.join(cascade_dir, "stage1_tau.json")
+        if os.path.exists(known_val_scores_path):
+            known_val_scores = np.load(known_val_scores_path)
+            print(f"[cascade:{split_name}] loaded cached known-val PatchCore scores")
+        else:
+            print(f"[cascade:{split_name}] scoring PatchCore for known val (tau calibration)...")
+            known_val_scores = infer_anomaly_scores(known_val_loader, device, backbone, memory)
+            np.save(known_val_scores_path, known_val_scores)
+            print(f"[cascade:{split_name}] saved known-val scores: {known_val_scores_path}")
+        threshold = float(calibrate_anomaly_threshold(known_val_scores, tau_accept_rate))
+        save_json(tau_info_path, {
+            "tau_source": "target_known_val",
+            "tau_accept_rate": tau_accept_rate,
+            "threshold": threshold,
+            "source_patchcore_threshold": float(source_threshold),
+            "known_val_count": int(len(known_val_scores)),
+        })
+        print(
+            f"[cascade:{split_name}] calibrated tau from target known val: "
+            f"{threshold:.6f} (accept_rate={tau_accept_rate})"
+        )
+    else:
+        print(f"[cascade:{split_name}] using source patchcore tau: {threshold:.6f}")
 
     # PatchCore anomaly scores
     print(f"[cascade:{split_name}] scoring PatchCore for known test...")
@@ -160,6 +196,9 @@ def main(config_path: str):
 
     metrics = {
         "patchcore_threshold": float(threshold),
+        "patchcore_threshold_source": str(tau_source),
+        "patchcore_threshold_source_value": float(source_threshold),
+        "patchcore_threshold_accept_rate": float(tau_accept_rate),
         "kappa": float(kappa),
         "auroc_known_unknown_conf_conditional": float(auroc_conf),
         "tpr_unknown_conditional": tpr_unknown_conditional,
