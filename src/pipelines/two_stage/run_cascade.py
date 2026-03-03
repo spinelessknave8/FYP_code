@@ -96,6 +96,7 @@ def main(config_path: str):
     class_to_idx = {c: i for i, c in enumerate(known_classes)}
 
     tf = transforms.Compose([
+        transforms.Grayscale(num_output_channels=3),
         transforms.Resize((cfg["image_size"], cfg["image_size"])),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
