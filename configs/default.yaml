@@ -54,6 +54,10 @@ two_stage:
   # "source_patchcore" reuses patchcore/threshold.json calibrated on Severstal normals.
   tau_source: "target_known_val"
   tau_accept_rate: 0.95
+  # How stage-1 pass and stage-2 confidence are fused for unknown rejection.
+  # "and": reject only if stage-1 pass AND confidence below kappa.
+  # "or": reject if stage-1 pass OR confidence below kappa.
+  fusion_rule: "and"
 
 runtime:
   num_warmup: 5

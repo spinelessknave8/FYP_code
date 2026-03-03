@@ -166,12 +166,19 @@ def main(config_path: str):
     # Cascade decision
     if kappa is None:
         kappa = 0.0
+    fusion_rule = str(cfg.get("two_stage", {}).get("fusion_rule", "and")).lower()
+    if fusion_rule not in {"and", "or"}:
+        raise ValueError(f"Unsupported two_stage.fusion_rule: {fusion_rule}")
 
     known_no_defect = known_scores <= threshold
     unk_no_defect = unk_scores <= threshold
 
-    known_reject = (~known_no_defect) & (conf_known < kappa)
-    unk_reject = (~unk_no_defect) & (conf_unknown < kappa)
+    if fusion_rule == "and":
+        known_reject = (~known_no_defect) & (conf_known < kappa)
+        unk_reject = (~unk_no_defect) & (conf_unknown < kappa)
+    else:
+        known_reject = (~known_no_defect) | (conf_known < kappa)
+        unk_reject = (~unk_no_defect) | (conf_unknown < kappa)
 
     # For NEU (all defects), keep both:
     # 1) conditional metrics on samples that pass stage 1
@@ -200,6 +207,7 @@ def main(config_path: str):
         "patchcore_threshold_source": str(tau_source),
         "patchcore_threshold_source_value": float(source_threshold),
         "patchcore_threshold_accept_rate": float(tau_accept_rate),
+        "fusion_rule": fusion_rule,
         "kappa": float(kappa),
         "auroc_known_unknown_conf_conditional": float(auroc_conf),
         "tpr_unknown_conditional": tpr_unknown_conditional,
@@ -223,6 +231,10 @@ def main(config_path: str):
     }
 
     save_json(os.path.join(cascade_dir, "metrics.json"), metrics)
+    np.save(os.path.join(cascade_dir, "known_scores.npy"), known_scores)
+    np.save(os.path.join(cascade_dir, "unknown_scores.npy"), unk_scores)
+    np.save(os.path.join(cascade_dir, "known_conf.npy"), conf_known)
+    np.save(os.path.join(cascade_dir, "unknown_conf.npy"), conf_unknown)
 
     global_metrics_path = os.path.join(out_dir, "metrics.json")
     if os.path.exists(global_metrics_path):
