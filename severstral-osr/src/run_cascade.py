@@ -99,8 +99,14 @@ def main(config_path: str):
 
     threshold = float(source_threshold)
     if tau_source == "target_known_val":
-        known_val_scores = infer_anomaly_scores(known_val_loader, device, backbone, memory)
-        np.save(os.path.join(cascade_dir, "stage1_known_val_scores.npy"), known_val_scores)
+        known_val_scores_path = os.path.join(cascade_dir, "stage1_known_val_scores.npy")
+        if os.path.exists(known_val_scores_path):
+            print(f"[severstal-cascade:{split_name}] loading cached known-val scores")
+            known_val_scores = np.load(known_val_scores_path)
+        else:
+            print(f"[severstal-cascade:{split_name}] scoring known val for tau calibration")
+            known_val_scores = infer_anomaly_scores(known_val_loader, device, backbone, memory)
+            np.save(known_val_scores_path, known_val_scores)
         threshold = float(calibrate_anomaly_threshold(known_val_scores, tau_accept_rate))
         save_json(os.path.join(cascade_dir, "stage1_tau.json"), {
             "tau_source": tau_source,
@@ -109,8 +115,26 @@ def main(config_path: str):
             "source_patchcore_threshold": float(source_threshold),
         })
 
-    known_scores = infer_anomaly_scores(known_loader, device, backbone, memory)
-    unk_scores = infer_anomaly_scores(unk_loader, device, backbone, memory)
+    known_scores_path = os.path.join(cascade_dir, "known_scores.npy")
+    unknown_scores_path = os.path.join(cascade_dir, "unknown_scores.npy")
+    known_conf_path = os.path.join(cascade_dir, "known_conf.npy")
+    unknown_conf_path = os.path.join(cascade_dir, "unknown_conf.npy")
+
+    if os.path.exists(known_scores_path):
+        print(f"[severstal-cascade:{split_name}] loading cached known scores")
+        known_scores = np.load(known_scores_path)
+    else:
+        print(f"[severstal-cascade:{split_name}] scoring known test")
+        known_scores = infer_anomaly_scores(known_loader, device, backbone, memory)
+        np.save(known_scores_path, known_scores)
+
+    if os.path.exists(unknown_scores_path):
+        print(f"[severstal-cascade:{split_name}] loading cached unknown scores")
+        unk_scores = np.load(unknown_scores_path)
+    else:
+        print(f"[severstal-cascade:{split_name}] scoring unknown test")
+        unk_scores = infer_anomaly_scores(unk_loader, device, backbone, memory)
+        np.save(unknown_scores_path, unk_scores)
 
     def get_confidences(loader):
         confs = []
@@ -121,8 +145,21 @@ def main(config_path: str):
                 confs.append(np.max(softmax(logits.cpu().numpy()), axis=1))
         return np.concatenate(confs)
 
-    conf_known = get_confidences(known_loader)
-    conf_unknown = get_confidences(unk_loader)
+    if os.path.exists(known_conf_path):
+        print(f"[severstal-cascade:{split_name}] loading cached known confidences")
+        conf_known = np.load(known_conf_path)
+    else:
+        print(f"[severstal-cascade:{split_name}] scoring known confidences")
+        conf_known = get_confidences(known_loader)
+        np.save(known_conf_path, conf_known)
+
+    if os.path.exists(unknown_conf_path):
+        print(f"[severstal-cascade:{split_name}] loading cached unknown confidences")
+        conf_unknown = np.load(unknown_conf_path)
+    else:
+        print(f"[severstal-cascade:{split_name}] scoring unknown confidences")
+        conf_unknown = get_confidences(unk_loader)
+        np.save(unknown_conf_path, conf_unknown)
 
     known_no_defect = known_scores <= threshold
     unk_no_defect = unk_scores <= threshold
@@ -163,10 +200,10 @@ def main(config_path: str):
     }
 
     save_json(os.path.join(cascade_dir, "metrics.json"), metrics)
-    np.save(os.path.join(cascade_dir, "known_scores.npy"), known_scores)
-    np.save(os.path.join(cascade_dir, "unknown_scores.npy"), unk_scores)
-    np.save(os.path.join(cascade_dir, "known_conf.npy"), conf_known)
-    np.save(os.path.join(cascade_dir, "unknown_conf.npy"), conf_unknown)
+    np.save(known_scores_path, known_scores)
+    np.save(unknown_scores_path, unk_scores)
+    np.save(known_conf_path, conf_known)
+    np.save(unknown_conf_path, conf_unknown)
 
     print(f"[severstal-cascade:{split_name}] done in {time.time() - t0:.1f}s")
     print(f"  stage1_pass_rate_known={metrics['stage1_pass_rate_known']:.4f}")
