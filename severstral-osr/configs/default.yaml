@@ -1,0 +1,54 @@
+seed: 42
+
+device: "cpu"
+image_size: 224
+batch_size: 32
+num_workers: 2
+
+output_dir: "outputs/severstral_osr"
+export_dir: "severstral-osr/exports"
+
+severstal:
+  data_root: "data/severstal"
+  train_csv: "train.csv"
+  images_dir: "train_images"
+  patch_size: 224
+  patch_stride: 224
+  val_ratio: 0.1
+
+# OSR known classes for classifier training. Override in split configs.
+known_classes:
+  - "Class_1"
+  - "Class_2"
+  - "Class_3"
+
+splits:
+  train_ratio: 0.7
+  val_ratio: 0.15
+
+resnet:
+  epochs: 15
+  lr: 1e-3
+  weight_decay: 1e-4
+  pretrained: true
+
+embedding:
+  layer: "avgpool"
+
+osr:
+  distance: "mahalanobis"
+  cov_reg_lambda: 1e-3
+  accept_rate: 0.95
+  use_confidence_gate: true
+  confidence_accept_rate: 0.95
+
+patchcore:
+  backbone: "resnet18"
+  num_patches_per_sample: 128
+  coreset_sampling_ratio: 0.1
+  accept_rate: 0.95
+
+two_stage:
+  tau_source: "target_known_val"
+  tau_accept_rate: 0.5
+  fusion_rule: "and"
