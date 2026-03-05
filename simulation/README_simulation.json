@@ -1,0 +1,7 @@
+{
+  "note": "Synthetic data for planning/presentation only. Not real experiment output.",
+  "generated_files": {
+    "metrics_csv": "simulation/simulated_metrics.csv",
+    "roc_points_csv": "simulation/simulated_roc_points.csv"
+  }
+}
