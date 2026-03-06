@@ -20,3 +20,5 @@ data/mvtec/
 build/
 dist/
 *.egg-info/
+
+cflow-ad
