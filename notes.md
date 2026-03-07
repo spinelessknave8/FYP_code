@@ -120,3 +120,95 @@ If we change anything below, we must update this file first:
 - primary metrics
 
 This keeps experiments comparable and prevents methodology drift.
+
+---
+
+## Deep Research Notes (for FYP write-up)
+
+### Industry-style priority (what to optimize first)
+- In industrial inspection, the default priority is usually **defect catching under a false-alarm constraint**, not raw overall accuracy.
+- Practical reporting is typically:
+  - `TPR_defect` / `TPR_unknown` at fixed `FPR_normal` (operating points),
+  - plus threshold-free `AUROC`.
+- For this FYP, primary operating points remain `FPR_normal = 5%, 10%, 20%`.
+
+### Protocol expectations from recent literature
+- Explicit known/unknown class split rules.
+- No unknown-class leakage into training/calibration.
+- Validation-only threshold calibration (ID-only before test).
+- Multiple splits/seeds + mean/std reporting.
+- Include operating-point metrics (not only AUROC).
+
+### Dataset/benchmark reality relevant to this project
+- NEU open-set benchmarks are limited/non-standard; direct 1:1 benchmark targets are scarce.
+- Severstal open-set literature is also sparse; most Severstal papers are closed-set detection/segmentation.
+- Therefore, method claims should be framed as:
+  - protocol-correct open-set evaluation,
+  - relative one-stage vs two-stage comparisons under matched constraints.
+
+### Current one-stage exploration summary (pilot, all splits)
+- Compared methods: global Mahalanobis, global kNN, OCSVM, IsolationForest, energy score, class-conditional Mahalanobis.
+- Shortlist based on latest pilot:
+  - `global_mahalanobis` (best balanced),
+  - `global_knn` (strong unknown-rejection candidate),
+  - `one_class_svm_rbf` (backup).
+- `energy_score` and `class_conditional_mahalanobis` underperform in this current setup.
+
+### Selection rule to keep final decision defensible
+- Choose model/params under explicit operating constraints, e.g.:
+  - maximize `TPR_unknown_within_defect`,
+  - then maximize `TPR_defect`,
+  - while keeping `FPR_known_as_unknown` under a fixed cap.
+- Report final comparison across `FPR_normal = 5%, 10%, 20%` (not a single threshold only).
+
+---
+
+## Research Diary Template (append here each run/research pass)
+
+- Date:
+- Notebook / script:
+- Objective:
+- Data split(s):
+- Main settings:
+- Key metrics:
+- Decision taken:
+- Next step:
+
+---
+
+## Progress Log (Current)
+
+### Why FPR points were 5/10/20
+- Initial choice was to cover low, medium, and relaxed false-alarm operating points with minimal runtime.
+- This was a practical first pass, not a hard rule.
+
+### Updated decision
+- For pilot model selection, use **FPR_normal = 5%, 10%, 15%, 20%**.
+- For final thesis tables, still report at least **5%, 10%, 20%** (and include 15% as sensitivity if useful).
+
+### Current one-stage exploration status
+- Notebook: `severstral-osr/notebooks/running_new_models.ipynb`
+- Evaluated one-stage methods across splits:
+  - global Mahalanobis
+  - global kNN
+  - one-class SVM (RBF)
+  - Isolation Forest
+  - energy score
+  - class-conditional Mahalanobis
+- Current shortlist:
+  - `global_mahalanobis` (best balanced)
+  - `global_knn` (strong unknown-rejection candidate)
+  - `one_class_svm_rbf` (backup)
+
+### Current two-stage comparison status
+- Two-stage CFLOW results exist in `severstral-osr/notebooks/cflow.ipynb` outputs.
+- Next step is a fair, matched operating-point comparison against locked one-stage winner.
+
+### Agreed next steps
+1. Re-run one-stage sweep with FPR grid {5, 10, 15, 20}.
+2. Run two-stage (CFLOW) with the same FPR grid and same split protocol.
+3. Compare one-stage winner vs two-stage at matched operating points (per split + mean/std).
+
+### Citation note for write-up
+- Main evidence to cite for industrial priority: optimize recall under false-alarm constraints (PG2/PB2 / FPR@TPR style), not accuracy-only ranking.
+- Keep direct quotes short and verify wording from the original PDFs before final thesis submission.
