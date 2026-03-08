@@ -1,0 +1,4 @@
+artifact_group,purpose,source_notebook,drive_path,status
+one_stage_all_methods,All one-stage integrated method comparison (mahalanobis, knn, ocsvm, isolation_forest, energy, class_conditional_mahalanobis),severstral-osr/notebooks/running_new_models.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_one_stage_pilot_all_splits/one_stage_scorer_sweep_all_splits.csv,exists_in_notebook_outputs
+one_stage_best_per_split,Best one-stage config per method per split,severstral-osr/notebooks/running_new_models.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_one_stage_pilot_all_splits/one_stage_best_per_method_per_split.csv,exists_in_notebook_outputs
+one_stage_mean_std,Mean/std summary of one-stage methods across splits,severstral-osr/notebooks/running_new_models.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_one_stage_pilot_all_splits/one_stage_method_summary_mean_std.csv,exists_in_notebook_outputs

@@ -1,0 +1,5 @@
+artifact_group,purpose,source_notebook,drive_path,status
+cflow_two_stage_summary,Two-stage CFLOW per-split/per-FPR metrics,severstral-osr/notebooks/cflow.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_cflow_two_stage_full/cflow_two_stage_summary.csv,exists_in_notebook_outputs
+cflow_two_stage_mean_std,Two-stage CFLOW mean/std across splits,severstral-osr/notebooks/cflow.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_cflow_two_stage_full/cflow_two_stage_mean_std.csv,exists_in_notebook_outputs
+cflow_stage1_cache,CFLOW stage1 cached score artifacts,severstral-osr/notebooks/cflow.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_cflow_two_stage_full/stage1_scores/,exists_in_notebook_outputs
+cflow_stage2_cache,CFLOW stage2 logits/models artifacts,severstral-osr/notebooks/cflow.ipynb,/content/drive/MyDrive/fyp_outputs/severstral_cflow_two_stage_full/stage2/,exists_in_notebook_outputs

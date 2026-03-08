@@ -212,3 +212,77 @@ This keeps experiments comparable and prevents methodology drift.
 ### Citation note for write-up
 - Main evidence to cite for industrial priority: optimize recall under false-alarm constraints (PG2/PB2 / FPR@TPR style), not accuracy-only ranking.
 - Keep direct quotes short and verify wording from the original PDFs before final thesis submission.
+
+---
+
+## Latest Run Snapshot (Working Notes)
+
+### CFLOW two-stage full-mode status
+- Notebook confirms `PILOT_MODE=False` and full-size manifests.
+- Unknown split bug fixed: `split_c` now has non-zero unknown test samples.
+- Full run currently shows high recall on some splits but weak false-alarm control (realized FPR much higher than target on several splits).
+
+### One-stage vs two-stage merge status
+- Comparison notebook runs and merges outputs, but some CFLOW secondary metrics were previously `NaN` because they were not written in the CFLOW summary schema.
+- Action: compute secondary metrics from saved stage1/stage2 artifacts without retraining and rewrite harmonized CSV.
+
+### Training-time note (provided by run log)
+- CFLOW total training time reported by user: **5h 47m 32s**
+- Converted value used for metrics: `train_sec = 20852`.
+- For now, if no measured inference runtime artifact exists, `total_split_sec` for CFLOW is set from available values (train-only or train+inference when available).
+
+### Local artifact index files in repo
+- `notes/data/one_stage_integrated_methods_outputs.csv`
+- `notes/data/two_stage_cflow_outputs.csv`
+- `notes/data/one_stage_vs_two_stage_outputs.csv`
+
+These CSVs map each experiment artifact group to source notebook + Drive output path + status label, so write-up can reference outputs systematically.
+
+---
+
+## Repository Organization (Current)
+
+### Notes folder structure
+- `notes/notes.md` -> master research log and methodology tracker.
+- `notes/data/raw/` -> raw metric CSVs copied from Colab/Drive outputs.
+- `notes/data/*.csv` -> artifact mapping/index tables (source notebook -> output path).
+- `notes/figures/` -> reserved for copied plots/images.
+
+### Raw metric CSVs currently present in repo
+- `notes/data/raw/cflow_two_stage_summary.csv`
+- `notes/data/raw/cflow_two_stage_mean_std.csv`
+- `notes/data/raw/one_stage_locked_full_summary.csv`
+- `notes/data/raw/two_stage_cflow_harmonized.csv`
+- `notes/data/raw/two_stage_cflow_enriched_from_cache.csv`
+- `notes/data/raw/one_stage_vs_two_stage_full_comparison.csv`
+- `notes/data/raw/one_stage_vs_two_stage_mean_std.csv`
+
+### Missing/Not currently copied into repo
+- One-stage all-method sweep CSVs from `running_new_models.ipynb`:
+  - `one_stage_scorer_sweep_all_splits.csv`
+  - `one_stage_best_per_method_per_split.csv`
+  - `one_stage_method_summary_mean_std.csv`
+- These were missing in the latest Drive export step and should be regenerated/re-copied only if needed for final thesis appendix.
+
+---
+
+## End-to-End Journey (Condensed Narrative for Thesis)
+
+1. Started with cross-domain and then Severstal-focused open-set experiments; encountered instability from runtime disconnects/cached artifacts.
+2. Standardized methodology:
+   - one-stage integrated OSR (embedding + distance-based scoring),
+   - two-stage CFLOW pipeline,
+   - strict split hygiene (known/unknown separation, no unknown leakage in calibration).
+3. Built one-stage method sweep notebook and compared multiple scorers:
+   - Mahalanobis, kNN, OCSVM, IsolationForest, energy, class-conditional Mahalanobis.
+4. Added operating-point evaluation at fixed false-alarm budgets (`FPR_normal` grid) and unknown-threshold tuning.
+5. Built two-stage CFLOW full-mode pipeline across all splits and fixed split construction issues (`unknown_test` non-zero in split_c).
+6. Created unified one-stage vs two-stage comparison notebook and aligned core metrics across methods.
+7. Filled missing CFLOW secondary metrics from cached artifacts (without retraining) and injected known training-time value:
+   - CFLOW `train_sec = 20852` (5h 47m 32s).
+8. Final result artifacts are now consolidated under `notes/data/raw/` for thesis writing and audit trail.
+
+### Caveats to state in thesis
+- CFLOW full runs show high recall on some splits but weak false-alarm control at selected operating points.
+- Some secondary timing metrics for CFLOW were reconstructed from cache/inference post-processing, not end-to-end re-timed training runs.
+- One-stage all-method sweep CSVs are currently not present in repo; final narrative should rely on available raw comparison CSVs unless those sweep files are restored.
