@@ -213,6 +213,60 @@ This keeps experiments comparable and prevents methodology drift.
 - Main evidence to cite for industrial priority: optimize recall under false-alarm constraints (PG2/PB2 / FPR@TPR style), not accuracy-only ranking.
 - Keep direct quotes short and verify wording from the original PDFs before final thesis submission.
 
+### Literature-backed reporting guidance (point form + refs)
+- **Industrial objective priority**
+  - Prioritize high defect recall under explicit false-alarm constraints (not accuracy-only optimization).
+  - Use operating-point metrics in addition to threshold-free metrics.
+  - Refs: [R1], [R2]
+
+- **Core metrics to report**
+  - Threshold-free: `AUROC_defect_screening`, `AUPRC_defect_screening`
+  - Operating-point: `TPR_defect@FPR_normal`, `TPR_unknown@FPR_normal`, `FPR_known_as_unknown@FPR_normal`
+  - System-level: 3-way `accuracy`, `balanced_accuracy`, `macro_f1`
+  - Runtime/deployability: `train_sec`, `infer_sec_per_image`, `total_split_sec`
+  - Refs: [R2], [R3], [R4], [R5]
+
+- **Recommended operating points**
+  - Report at least `FPR_normal = 5%, 10%, 20%` (and `15%` as sensitivity/ablation).
+  - Include stricter low-FPR commentary where possible (industry often evaluates very low false alarms).
+  - Refs: [R1], [R2], [R6]
+
+- **Protocol rules (fair comparison / no leakage)**
+  - Fixed known/unknown split definition per split.
+  - Unknown defects are strictly test-only (no training/calibration leakage).
+  - Validation-only threshold calibration; no test-set tuning/early-stopping decisions.
+  - Keep preprocessing/input size/backbone consistent across one-stage vs two-stage comparison.
+  - Refs: [R1], [R2], [R3]
+
+- **OSR-style metrics vs industrial AD metrics**
+  - OSCR/FPR@95TPR are common in generic OSR literature.
+  - Industrial AD papers more commonly center AUROC/AUPRO plus deployment-facing operating metrics (PG2/PB2, recall/FAR style).
+  - In thesis: OSCR can be mentioned as context, but industrial metric stack should remain primary.
+  - Refs: [R1], [R2], [R7], [R8]
+
+- **Preprocessing guidance**
+  - Keep AD preprocessing simple and consistent (resize/normalize); avoid aggressive crop tricks that bias false-alarm behavior.
+  - Classical heavy preprocessing and defect-specific filtering are more common in closed-set steel detection literature than one-class AD benchmarks.
+  - Refs: [R1], [R3], [R9]
+
+- **Fair one-stage vs two-stage comparison checklist**
+  - Same dataset splits and same FPR targets.
+  - Same threshold calibration protocol.
+  - Same reporting unit (per-split + mean/std).
+  - Include both effectiveness metrics and runtime/latency metrics.
+  - Refs: [R1], [R2], [R3], [R4]
+
+#### References (use as citation keys in thesis draft)
+- [R1] Baitieva et al., *Beyond Academic Benchmarks: Critical Analysis and Best Practices for Visual Industrial Anomaly Detection (VIAD)*, 2025. (PG2/PB2, protocol cautions, realistic industrial evaluation)
+- [R2] MVTec AD / MVTec AD 2 benchmark conventions (AUROC/AUPRO and stricter FPR-capped localization emphasis).
+- [R3] Gudovskiy et al., *CFLOW-AD*, WACV 2022. (industrial AD metrics + runtime/model size reporting)
+- [R4] Roth et al., *PatchCore*, CVPR 2022. (strong one-class industrial baseline + runtime focus)
+- [R5] FR-PatchCore, Sensors 2024. (industrial-style FAR/recall reporting on additional real datasets)
+- [R6] Operating-point style metrics in industrial QA: PB2/PG2 (TNR/TPR under fixed low error constraints).
+- [R7] OSR literature using OSCR/FPR@95TPR (e.g., C2AE and large-scale OSR protocol papers).
+- [R8] Open-set metrics context: OSCR useful for theory, less dominant in industrial AD benchmark reporting.
+- [R9] Steel-surface survey (closed-set focus): classical preprocessing is common there but should be separated from one-class open-set AD protocol choices.
+
 ---
 
 ## Latest Run Snapshot (Working Notes)
@@ -244,18 +298,45 @@ These CSVs map each experiment artifact group to source notebook + Drive output 
 
 ### Notes folder structure
 - `notes/notes.md` -> master research log and methodology tracker.
+- `notes/references.md` -> working bibliography with links for citation keys `[R1]..[R9]`.
 - `notes/data/raw/` -> raw metric CSVs copied from Colab/Drive outputs.
+- `notes/data/clean/` -> cleaned/renamed CSVs for analysis and thesis tables.
 - `notes/data/*.csv` -> artifact mapping/index tables (source notebook -> output path).
 - `notes/figures/` -> reserved for copied plots/images.
 
 ### Raw metric CSVs currently present in repo
-- `notes/data/raw/cflow_two_stage_summary.csv`
-- `notes/data/raw/cflow_two_stage_mean_std.csv`
-- `notes/data/raw/one_stage_locked_full_summary.csv`
-- `notes/data/raw/two_stage_cflow_harmonized.csv`
-- `notes/data/raw/two_stage_cflow_enriched_from_cache.csv`
-- `notes/data/raw/one_stage_vs_two_stage_full_comparison.csv`
-- `notes/data/raw/one_stage_vs_two_stage_mean_std.csv`
+- `notes/data/raw/FYP data - onestage explorations.csv`
+- `notes/data/raw/FYP data - one_stage_summarised.csv`
+- `notes/data/raw/FYP data - cflow full runs.csv`
+- `notes/data/raw/FYP data - cflow_mean_metrics.csv`
+- `notes/data/raw/FYP data - anomaly detector model comparison.csv`
+- `notes/data/raw/FYP data - one_stage_vs_tw_stage.csv`
+- `notes/data/raw/FYP data - one_stage_vs_two_stage_summary.csv`
+- `notes/data/raw/FYP data - classifier_model_pilot.csv`
+- `notes/data/raw/FYP data - classifier_model_pilot_summary.csv`
+
+### Cleaned/renamed CSVs (recommended to use)
+- `notes/data/clean/one_stage_exploration_per_split.csv`
+- `notes/data/clean/one_stage_exploration_mean_metrics.csv`
+- `notes/data/clean/cflow_full_runs.csv`
+- `notes/data/clean/cflow_mean_metrics.csv`
+- `notes/data/clean/anomaly_detector_model_comparison.csv`
+- `notes/data/clean/one_stage_vs_two_stage_full_comparison.csv`
+- `notes/data/clean/one_stage_vs_two_stage_mean_std.csv`
+- `notes/data/clean/classifier_model_pilot.csv`
+- `notes/data/clean/classifier_model__pilot_summary.csv`
+- `notes/data/clean/README_clean_files.csv` (raw->clean conversion log)
+
+### Rename mapping (raw -> clean)
+- `FYP data - onestage explorations.csv` -> `one_stage_exploration_per_split.csv`
+- `FYP data - one_stage_summarised.csv` -> `one_stage_exploration_mean_metrics.csv`
+- `FYP data - cflow full runs.csv` -> `cflow_full_runs.csv`
+- `FYP data - cflow_mean_metrics.csv` -> `cflow_mean_metrics.csv`
+- `FYP data - anomaly detector model comparison.csv` -> `anomaly_detector_model_comparison.csv`
+- `FYP data - one_stage_vs_tw_stage.csv` -> `one_stage_vs_two_stage_full_comparison.csv`
+- `FYP data - one_stage_vs_two_stage_summary.csv` -> `one_stage_vs_two_stage_mean_std.csv`
+- `FYP data - classifier_model_pilot.csv` -> `classifier_model_pilot.csv`
+- `FYP data - classifier_model_pilot_summary.csv` -> `classifier_model__pilot_summary.csv`
 
 ### Missing/Not currently copied into repo
 - One-stage all-method sweep CSVs from `running_new_models.ipynb`:
@@ -282,7 +363,138 @@ These CSVs map each experiment artifact group to source notebook + Drive output 
    - CFLOW `train_sec = 20852` (5h 47m 32s).
 8. Final result artifacts are now consolidated under `notes/data/raw/` for thesis writing and audit trail.
 
+---
+
+## Preprocessing Ablations
+
+### Border-crop pilot (Severstal)
+- Goal: test whether cropping non-black border regions improves stage-1 defect screening.
+- Setup: small pilot split (`normal_train=300`, `normal_val=120`, `normal_test=200`, `defect_test=300`), ResNet18 embedding + 1-class Gaussian (Mahalanobis), calibrated at `FPR_normal=10%`.
+- Result (`/content/drive/MyDrive/fyp_outputs/preprocessing_pilot/border_crop_pilot.csv`):
+  - `no_crop`: AUROC `0.5190`, `TPR_defect@FPR10=0.1533`, realized `FPR_normal=0.0900`
+  - `border_crop`: AUROC `0.5094`, `TPR_defect@FPR10=0.1500`, realized `FPR_normal=0.0950`
+  - Delta (border - no crop): AUROC `-0.0096`, `TPR_defect@FPR10=-0.0033`, `FPR_normal=+0.0050`
+- Decision: border-cropping did not improve performance and was excluded from the final pipeline.
+
+---
+
+## Exact Methodology Followed (Step-by-Step + Justification)
+
+### 1) Problem framing and protocol lock
+- Task locked as open-set industrial defect recognition with three outcomes: `normal`, `known defect`, `unknown defect`.
+- Justification: matches deployment reality where unseen defect types appear after deployment.
+
+### 2) Split construction
+- Per split: 3 known defect classes for training/validation, 1 held-out defect class as unknown test-only.
+- Normal images used across train/val/test for screening calibration and evaluation.
+- Justification: enforces true open-set testing and prevents leakage.
+
+### 3) One-stage integrated pipeline design
+- Train classifier backbone on known classes only.
+- Use embeddings for:
+  - defect screening (normal vs defect),
+  - known-vs-unknown separation inside defects.
+- Candidate scorers explored: global Mahalanobis, kNN, OCSVM-RBF, IsolationForest, energy score, class-conditional Mahalanobis.
+- Justification: compare classical low-cost scorers under one common embedding pipeline and pick the best trade-off.
+
+### 4) Two-stage reference pipeline design
+- Two-stage CFLOW setup used as comparator:
+  - anomaly screening + defect decision pathway,
+  - evaluated with same split protocol and same operating-point logic.
+- Justification: direct one-stage vs two-stage comparison under matched conditions.
+
+### 5) Threshold calibration and operating points
+- Thresholds calibrated on validation only (ID-only), no unknown-class tuning.
+- Operating points evaluated at target `FPR_normal` values (`5%, 10%, 15%, 20%` in sweeps; report at least `5/10/20`).
+- Justification: aligns with industrial practice of maximizing recall under explicit false-alarm budgets.
+
+### 6) Metrics collected
+- Screening quality: `AUROC_defect_screening`, `AUPRC_defect_screening`.
+- Operating-point metrics: `TPR_defect@FPR`, `TPR_unknown@FPR`, `FPR_known_as_unknown@FPR`, realized `FPR_normal`.
+- System metrics: 3-way accuracy, balanced accuracy, macro-F1, confusion structure.
+- Runtime metrics: train seconds, inference seconds per image, total split runtime.
+- Justification: supports deployment trade-off analysis, not only leaderboard-style AUROC.
+
+### 7) Data and result governance
+- Raw outputs copied into `notes/data/raw/`; cleaned/renamed analysis tables in `notes/data/clean/`.
+- Artifact indexes track notebook/source path to output files for traceability.
+- Justification: reproducible write-up and auditable thesis appendix.
+
+### 8) Preprocessing ablation policy
+- Candidate preprocessing changes tested with small pilots before inclusion.
+- Border-crop ablation run and rejected due to small negative deltas.
+- Justification: avoid adding preprocessing complexity without measurable gain.
+
+### 9) Final model selection logic used
+- Prefer models that keep false alarms controlled while preserving defect/unknown recall.
+- One-stage winner chosen from scorer sweep; two-stage CFLOW retained as structured comparator despite higher runtime and false-alarm issues.
+- Justification: thesis compares realistic operating trade-offs, not only best single metric.
+
+---
+
+## Deep Research Backlog (Questions to Validate with Citations)
+
+1. What false-alarm budgets are commonly used in industrial vision QA when reporting defect recall (e.g., FPR=1/2/5/10%)?
+2. For open-set industrial defect settings, which primary operating metric is preferred in papers and in practice (TPR@FPR, FNR caps, PG2/PB2, FPR@95TPR)?
+3. What reporting standard is expected for unknown-defect handling (unknown recall, known-as-unknown error, OSCR, AUROC, AUPR)?
+4. Are there accepted threshold-calibration rules for ID-only validation without unknown leakage?
+5. What runtime/latency metrics do papers and factory case studies report for deployability (train time, per-image inference, throughput)?
+6. In steel/surface defect use-cases, what preprocessing choices are commonly justified (crop borders, grayscale normalization, component filtering), and when are they discouraged?
+7. For CFLOW/RD4AD/SimpleNet/PatchCore-like models, what operating-point ranges are realistic on industrial datasets beyond MVTec?
+8. How should one-stage vs two-stage systems be compared fairly in literature (same splits, same FPR targets, same unknown protocol, same reporting units)?
+
+### Ready-to-use Deep Research Prompt
+Use this prompt with Perplexity/Claude/Gemini:
+
+> I am writing an undergraduate thesis on open-set industrial defect detection (steel surface domain).  
+> My protocol uses known/unknown class splits and reports metrics at fixed false-alarm budgets.  
+> Please provide a source-backed synthesis (2021–latest, prioritize peer-reviewed CVPR/ICCV/ECCV/WACV, TPAMI/TII/TIM/TMM, and strong industrial benchmark papers) answering the following:
+> 1) What operating priorities are standard in industrial QA: maximize defect recall under fixed FPR, or maximize balanced accuracy/F1?  
+> 2) What operating-point metrics are most accepted (e.g., TPR@FPR=x, FPR@95TPR, PG2/PB2, OSCR), and what typical x values are used?  
+> 3) What protocol rules are required for fair open-set evaluation (no unknown leakage, split design, calibration design, multi-split reporting)?  
+> 4) What runtime/deployability metrics should be reported for factory relevance?  
+> 5) For one-stage vs two-stage industrial defect systems, what are recommended fair-comparison practices?  
+>  
+> Output format required:
+> - Section A: concise conclusions (10 bullets max)  
+> - Section B: evidence table with paper, year, dataset, protocol type, metrics, key numbers, and how comparable it is to my setup  
+> - Section C: recommended reporting template for my thesis (what to report in main table and appendix)  
+> - Section D: direct links to primary sources  
+>  
+> Constraints:
+> - Mark explicitly what is direct evidence vs inference/extrapolation.  
+> - Prefer up-to-date papers and real industrial datasets, not only MVTec.  
+> - Avoid unsupported claims; include citation links next to each claim.
+
 ### Caveats to state in thesis
 - CFLOW full runs show high recall on some splits but weak false-alarm control at selected operating points.
 - Some secondary timing metrics for CFLOW were reconstructed from cache/inference post-processing, not end-to-end re-timed training runs.
 - One-stage all-method sweep CSVs are currently not present in repo; final narrative should rely on available raw comparison CSVs unless those sweep files are restored.
+
+---
+
+## Interim-to-Current Gap Notes
+
+Source checked: `notes/FYP Interim (1).pdf` (section outline indicates one-stage integrated OSR focus with Mahalanobis and splits A/B/C).
+
+### What changed since interim
+- Scope expanded from primarily one-stage integrated OSR to explicit **one-stage vs two-stage (CFLOW)** comparison.
+- Dataset focus stabilized around Severstal open-set protocol with explicit `normal / known / unknown` reporting and matched operating points.
+- Evaluation moved from mostly recognition-style reporting to **industrial operating-point reporting** (`TPR@FPR`, unknown rejection behavior, runtime metrics).
+- Experimentation widened from one Mahalanobis-centric setup to scorer sweeps (Mahalanobis, kNN, OCSVM, IsolationForest, etc.) and preprocessing ablations.
+- Repository governance improved (raw/clean CSV tracking, artifact mapping, methodology lock notes).
+
+### Gaps to close in final report (relative to interim)
+- Add a dedicated section that explains why AUROC alone is insufficient and why operating-point metrics are primary for industrial QA.
+- Add explicit fairness protocol for one-stage vs two-stage comparison (same splits, same calibration rules, no unknown leakage).
+- Add deployment trade-off discussion (false alarms vs defect miss risk + latency/throughput implications).
+- Add a short preprocessing ablation subsection (including border-crop pilot result and decision to exclude).
+- Ensure methodology chapter includes both systems end-to-end with a unified decision flow diagram/table.
+
+### Literature review sufficiency status
+- **Partially sufficient** as a base: core open-set and integrated OSR framing exists.
+- **Needs strengthening** for final thesis with:
+  - recent industrial AD benchmark practice (VIAD/MVTec AD 2 style metrics/protocol),
+  - explicit operating-point metric rationale (PG2/PB2 or equivalent),
+  - fair-comparison protocol references for one-stage vs two-stage systems,
+  - clearer separation between closed-set steel defect literature and one-class/open-set AD literature.

@@ -1,0 +1,5 @@
+fpr_target,AUROC_defect_screening_mean,AUROC_defect_screening_std,TPR_defect@FPR_mean,TPR_defect@FPR_std,TPR_unknown@FPR_mean,TPR_unknown@FPR_std,FPR_known_as_def@FPR_mean,FPR_known_as_def@FPR_std,FPR_normal_realized_mean,FPR_normal_realized_std,two_stage_known_success_mean,two_stage_known_success_std,two_stage_unknown_success_mean,two_stage_unknown_success_std,stage2_unknown_rate_known_all_mean,stage2_unknown_rate_known_all_std,stage2_unknown_rate_unknown_all_mean,stage2_unknown_rate_unknown_all_std
+0.05,0.533001,0.049221,0.345079,0.141471,0.352824,0.358793,0.320816,0.104654,0.255,0.100093,0.283996,0.098888,0.031157,0.042007,0.121092,0.04724,0.200787,0.169473
+0.1,0.533001,0.049221,0.431945,0.155793,0.407361,0.375002,0.42044,0.134847,0.38,0.133167,0.361039,0.10847,0.045324,0.047586,0.121092,0.04724,0.200787,0.169473
+0.15,0.533001,0.049221,0.520197,0.161231,0.480556,0.383465,0.524221,0.112071,0.511667,0.128164,0.443705,0.097252,0.061806,0.058315,0.121092,0.04724,0.200787,0.169473
+0.2,0.533001,0.049221,0.573038,0.145895,0.534028,0.354774,0.580917,0.117618,0.586667,0.11563,0.485474,0.11128,0.07463,0.065371,0.121092,0.04724,0.200787,0.169473

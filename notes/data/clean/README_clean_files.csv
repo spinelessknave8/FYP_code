@@ -1,0 +1,8 @@
+raw_file,status
+FYP data - anomaly detector model comparison.csv,"cleaned -> anomaly_detector_model_comparison.csv, rows=12, cols=8"
+FYP data - cflow full runs.csv,"cleaned -> cflow_full_runs.csv, rows=16, cols=13"
+FYP data - cflow_mean_metrics.csv,"cleaned -> cflow_mean_metrics.csv, rows=4, cols=19"
+FYP data - one_stage_summarised.csv,"cleaned -> one_stage_exploration_mean_metrics.csv, rows=6, cols=15"
+FYP data - onestage explorations.csv,"cleaned -> one_stage_exploration_per_split.csv, rows=24, cols=10"
+FYP data - one_stage_vs_tw_stage.csv,"cleaned -> one_stage_vs_two_stage_full_comparison.csv, rows=32, cols=17"
+FYP data - one_stage_vs_two_stage_summary.csv,"cleaned -> one_stage_vs_two_stage_mean_std.csv, rows=7, cols=20"

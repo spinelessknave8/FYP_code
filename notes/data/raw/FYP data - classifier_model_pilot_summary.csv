@@ -1,0 +1,5 @@
+model,val_accuracy_mean,val_accuracy_std,test_accuracy_mean,test_accuracy_std,macro_f1_mean,macro_f1_std,train_sec_mean
+resnet18,0.835,0.0229,0.8125,0.0217,0.7925,0.0217,93.5
+resnet50,0.88,0.0187,0.86,0.0187,0.84,0.0187,148.5
+efficientnet_b0,0.8675,0.0192,0.84,0.0187,0.8275,0.0192,131.5
+mobilenet_v3_small,0.8075,0.0192,0.7775,0.0192,0.7575,0.0192,71.5

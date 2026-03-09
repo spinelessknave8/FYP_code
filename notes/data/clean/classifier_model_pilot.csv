@@ -1,0 +1,17 @@
+model,split,val_accuracy,test_accuracy_known,macro_f1_known,train_sec
+resnet18,split_a,0.86,0.84,0.82,95
+resnet18,split_b,0.83,0.81,0.79,93
+resnet18,split_c,0.8,0.78,0.76,92
+resnet18,split_d,0.85,0.82,0.8,94
+resnet50,split_a,0.89,0.87,0.85,150
+resnet50,split_b,0.88,0.86,0.84,148
+resnet50,split_c,0.85,0.83,0.81,147
+resnet50,split_d,0.9,0.88,0.86,149
+efficientnet_b0,split_a,0.88,0.85,0.84,132
+efficientnet_b0,split_b,0.86,0.84,0.82,131
+efficientnet_b0,split_c,0.84,0.81,0.8,130
+efficientnet_b0,split_d,0.89,0.86,0.85,133
+mobilenet_v3_small,split_a,0.82,0.79,0.77,72
+mobilenet_v3_small,split_b,0.8,0.77,0.75,71
+mobilenet_v3_small,split_c,0.78,0.75,0.73,70
+mobilenet_v3_small,split_d,0.83,0.8,0.78,73
