@@ -302,7 +302,7 @@ These CSVs map each experiment artifact group to source notebook + Drive output 
 - `notes/data/raw/` -> raw metric CSVs copied from Colab/Drive outputs.
 - `notes/data/clean/` -> cleaned/renamed CSVs for analysis and thesis tables.
 - `notes/data/*.csv` -> artifact mapping/index tables (source notebook -> output path).
-- `notes/figures/` -> reserved for copied plots/images.
+- `notes/figures_folder/` -> copied/generated plots and figure manifests for thesis use.
 
 ### Raw metric CSVs currently present in repo
 - `notes/data/raw/FYP data - onestage explorations.csv`
@@ -429,6 +429,100 @@ These CSVs map each experiment artifact group to source notebook + Drive output 
 - Prefer models that keep false alarms controlled while preserving defect/unknown recall.
 - One-stage winner chosen from scorer sweep; two-stage CFLOW retained as structured comparator despite higher runtime and false-alarm issues.
 - Justification: thesis compares realistic operating trade-offs, not only best single metric.
+
+---
+
+## Thesis Writing Map (What to show, where, and why)
+
+This section maps your existing CSVs/plots to report sections so the final write-up is consistent and defensible.
+
+### A) Methodology section (what was explored + selection logic)
+
+#### A1. Candidate model exploration (one-stage)
+- **Table**: model exploration summary (means/std)
+  - Source: `notes/data/clean/one_stage_exploration_mean_metrics.csv`
+  - Include columns: `method`, `screening_auroc_test_mean`, `tpr_defect_mean`, `fpr_normal_mean`, `tpr_unknown_within_defect_mean`, `macro_f1_3way_mean`.
+- **Figure**: bar chart ranking explored one-stage methods.
+- **Why this belongs here**: shows that final one-stage choice was evidence-driven, not arbitrary.
+
+#### A2. Classifier exploration (pilot)
+- **Table**: classifier pilot summary
+  - Source: `notes/data/clean/classifier_model__pilot_summary.csv`
+  - Include: `test_accuracy_mean`, `macro_f1_mean`, `train_sec_mean`.
+- **Figure**: side-by-side bars for classifier candidates.
+- **Why this belongs here**: documents backbone/classifier choice process.
+
+#### A3. Preprocessing ablation
+- **Table**: border-crop pilot result (`no_crop` vs `border_crop`)
+  - Source: `/content/drive/MyDrive/fyp_outputs/preprocessing_pilot/border_crop_pilot.csv`
+- **Why this belongs here**: proves preprocessing decisions were tested and justified.
+
+### B) Experimental setup / protocol section
+- **Protocol table** (small): split definition, known vs unknown rule, calibration rule, FPR targets, no leakage policy.
+- **Why**: makes one-stage vs two-stage comparison fair and reproducible.
+
+### C) Results section (main comparison one-stage vs two-stage)
+
+#### C1. Main per-method comparison across operating points
+- **Primary table**: mean/std by method and FPR target
+  - Source: `notes/data/clean/one_stage_vs_two_stage_mean_std.csv`
+- **Primary figure set** (line plots, same axes):
+  1) `TPR_defect@FPR_mean` vs `fpr_target`
+  2) `TPR_unknown@FPR_mean` vs `fpr_target`
+  3) `macro_f1_3way_mean` vs `fpr_target`
+  4) `balanced_acc_3way_mean` vs `fpr_target`
+- **Why**: these four plots show detection/open-set quality trends under changing false-alarm budgets.
+
+#### C2. Per-split robustness
+- **Table (appendix or compact in main text)**:
+  - Source: `notes/data/clean/one_stage_vs_two_stage_full_comparison.csv`
+  - Include per-split values for key metrics.
+- **Why**: demonstrates stability and variance across splits (not just averaged performance).
+
+#### C3. Runtime / industrial deployment trade-offs
+- **Table**: `train_sec_mean`, `infer_sec_per_image_mean`, `total_split_sec_mean`
+  - Source: `notes/data/clean/one_stage_vs_two_stage_mean_std.csv`
+- **Figure**: efficiency-quality scatter
+  - x = `infer_sec_per_image`, y = `macro_f1_3way`
+  - optional marker size by `train_sec`.
+- **Why**: directly supports FYP objective (trade-offs, pros/cons, not accuracy-only).
+
+### D) Discussion section (advantages/disadvantages)
+- **Use evidence from results**:
+  - one-stage strengths: better overall balance / lower false alarms (if supported by table values).
+  - two-stage strengths: higher defect recall at relaxed thresholds (if supported).
+  - two-stage weaknesses: false alarm inflation and higher training/runtime cost.
+- **Why**: converts metric observations into engineering conclusions for industrial use.
+
+### E) Appendix (extra but useful)
+- Full metric tables per split.
+- Additional exploration plots.
+- Data/artifact mapping files for reproducibility:
+  - `notes/data/one_stage_integrated_methods_outputs.csv`
+  - `notes/data/two_stage_cflow_outputs.csv`
+  - `notes/data/one_stage_vs_two_stage_outputs.csv`
+
+---
+
+## Metric Selection Rationale (what to say explicitly in thesis)
+
+- `AUROC_defect_screening` / `AUPRC_defect_screening`:
+  - threshold-independent quality of screening score.
+- `TPR_defect@FPR`:
+  - industrial priority metric (defect catch rate under fixed false-alarm budget).
+- `TPR_unknown@FPR` and `FPR_known_as_unknown@FPR`:
+  - open-set reliability (reject unknowns without over-rejecting known defects).
+- `FPR_normal_realized`, `Specificity_normal`, `FalseAlarms_per_100`:
+  - operator workload / overkill impact in production.
+- `acc_3way`, `balanced_acc_3way`, `macro_f1_3way`:
+  - whole-system behavior across all three labels (normal/known/unknown).
+- `train_sec`, `infer_sec_per_image`, `total_split_sec`:
+  - practical deployment and maintenance cost.
+
+### Selection rule used to choose final models
+- Primary: maximize `TPR_defect@FPR` and `TPR_unknown@FPR` under controlled `FPR_normal_realized`.
+- Secondary: maximize `macro_f1_3way` / `balanced_acc_3way`.
+- Tie-breaker: lower `infer_sec_per_image` and lower operational complexity.
 
 ---
 
